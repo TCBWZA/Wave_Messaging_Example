@@ -1,0 +1,29 @@
+# CODEOWNERS file for GitHub
+# This file defines code ownership and required reviewers
+
+# Default owners for all repository files
+* @your-username
+
+# Domain models - handled by domain team
+/Domain/ @your-username
+
+# Application layer - handled by application team
+/Application/ @your-username
+
+# Infrastructure - handled by infrastructure team
+/Infrastructure/ @your-username
+
+# Publisher - handled by publisher owner
+/Publisher/ @your-username
+
+# Subscriber - handled by subscriber owner
+/Subscriber/ @your-username
+
+# Azure implementations
+/AzurePublisher/ @your-username
+/AzureSubscriber/ @your-username
+
+# Configuration and documentation
+*.md @your-username
+.gitignore @your-username
+.github/ @your-username

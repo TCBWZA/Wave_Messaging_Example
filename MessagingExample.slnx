@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Application/Application.csproj" />
+  <Project Path="AzurePublisher/AzurePublisher.csproj" />
+  <Project Path="AzureSubscriber/AzureSubscriber.csproj" />
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Infrastructure/Infrastructure.csproj" />
+  <Project Path="Publisher/Publisher.csproj" />
+  <Project Path="Subscriber/Subscriber.csproj" />
+</Solution>

@@ -1,0 +1,178 @@
+param(
+    [string]$RabbitMqHost = "localhost",
+    [int]$RabbitMqPort = 15672,
+    [string]$Username = "guest",
+    [string]$Password = "guest"
+)
+
+<#
+.SYNOPSIS
+    Sets up RabbitMQ queues and bindings for the Messaging Example application.
+
+.DESCRIPTION
+    This script creates all necessary RabbitMQ queues (customer, order, product, supplier)
+    and their bindings to the messaging_exchange with appropriate routing keys.
+
+.PARAMETER RabbitMqHost
+    The hostname or IP address of the RabbitMQ server. Default: localhost
+
+.PARAMETER RabbitMqPort
+    The port of the RabbitMQ Management API. Default: 15672
+
+.PARAMETER Username
+    The username for RabbitMQ authentication. Default: guest
+
+.PARAMETER Password
+    The password for RabbitMQ authentication. Default: guest
+
+.EXAMPLE
+    .\setup-rabbitmq.ps1
+    
+    Setup with default settings (localhost:15672, guest/guest)
+
+.EXAMPLE
+    .\setup-rabbitmq.ps1 -RabbitMqHost "rabbitmq.example.com" -Username "admin" -Password "securepassword"
+    
+    Setup with custom RabbitMQ instance
+
+.NOTES
+    Requires PowerShell 5.0 or higher
+    RabbitMQ Management API must be accessible
+#>
+
+# Colors for output
+$successColor = 'Green'
+$errorColor = 'Red'
+$infoColor = 'Cyan'
+
+Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor $infoColor
+Write-Host "║   RabbitMQ Setup for Messaging Example Application       ║" -ForegroundColor $infoColor
+Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor $infoColor
+Write-Host ""
+
+# Validate connection
+Write-Host "Validating RabbitMQ connection..." -ForegroundColor $infoColor
+try {
+    $credentials = New-Object System.Management.Automation.PSCredential(
+        $Username,
+        (ConvertTo-SecureString $Password -AsPlainText -Force)
+    )
+    
+    $baseUrl = "http://${RabbitMqHost}:${RabbitMqPort}/api"
+    $testUri = "$baseUrl/aliveness-test/%2F"
+    
+    $response = Invoke-RestMethod -Uri $testUri -Credential $credentials -Method Get -AllowUnencryptedAuthentication
+    Write-Host "✓ Connected to RabbitMQ at $RabbitMqHost`:$RabbitMqPort" -ForegroundColor $successColor
+}
+catch {
+    Write-Host "✗ Failed to connect to RabbitMQ at $RabbitMqHost`:$RabbitMqPort" -ForegroundColor $errorColor
+    Write-Host "  Error: $_" -ForegroundColor $errorColor
+    Write-Host ""
+    Write-Host "Make sure RabbitMQ is running and accessible." -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host ""
+
+# Queues to create
+$queues = @("customer.queue", "order.queue", "product.queue", "supplier.queue")
+
+# Bindings to create (queue, routing_key)
+$bindings = @(
+    ("customer.queue", "customer.create"),
+    ("customer.queue", "customer.update"),
+    ("order.queue", "order.create"),
+    ("order.queue", "order.update"),
+    ("product.queue", "product.create"),
+    ("product.queue", "product.update"),
+    ("supplier.queue", "supplier.create"),
+    ("supplier.queue", "supplier.update")
+)
+
+$successCount = 0
+$failureCount = 0
+
+# Create queues
+Write-Host "Creating RabbitMQ queues..." -ForegroundColor $infoColor
+Write-Host "────────────────────────────────────────" -ForegroundColor $infoColor
+
+foreach ($queue in $queues) {
+    try {
+        $queueUri = "$baseUrl/queues/%2F/$queue"
+        Invoke-RestMethod -Uri $queueUri `
+            -Credential $credentials `
+            -Method Put `
+            -ContentType "application/json" `
+            -AllowUnencryptedAuthentication `
+            -Body '{"durable":true}' | Out-Null
+        
+        Write-Host "  ✓ Queue created: $queue" -ForegroundColor $successColor
+        $successCount++
+    }
+    catch {
+        Write-Host "  ✗ Failed to create queue: $queue" -ForegroundColor $errorColor
+        Write-Host "    Error: $($_.Exception.Message)" -ForegroundColor $errorColor
+        $failureCount++
+    }
+}
+
+Write-Host ""
+
+# Create bindings
+Write-Host "Creating RabbitMQ bindings..." -ForegroundColor $infoColor
+Write-Host "────────────────────────────────────────" -ForegroundColor $infoColor
+
+foreach ($binding in $bindings) {
+    $queue = $binding[0]
+    $routingKey = $binding[1]
+    
+    try {
+        $bindingUri = "$baseUrl/bindings/%2F/e/messaging_exchange/q/$queue"
+        $body = @{
+            routing_key = $routingKey
+        } | ConvertTo-Json
+        
+        Invoke-RestMethod -Uri $bindingUri `
+            -Credential $credentials `
+            -Method Post `
+            -ContentType "application/json" `
+            -AllowUnencryptedAuthentication `
+            -Body $body | Out-Null
+        
+        Write-Host "  ✓ Binding created: $queue -> $routingKey" -ForegroundColor $successColor
+        $successCount++
+    }
+    catch {
+        Write-Host "  ✗ Failed to create binding: $queue -> $routingKey" -ForegroundColor $errorColor
+        Write-Host "    Error: $($_.Exception.Message)" -ForegroundColor $errorColor
+        $failureCount++
+    }
+}
+
+Write-Host ""
+Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor $infoColor
+Write-Host "║                    Setup Complete                         ║" -ForegroundColor $infoColor
+Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor $infoColor
+
+Write-Host ""
+Write-Host "Summary:" -ForegroundColor $infoColor
+Write-Host "  ✓ Created: $successCount" -ForegroundColor $successColor
+Write-Host "  ✗ Failed:  $failureCount" -ForegroundColor $(if ($failureCount -gt 0) { $errorColor } else { $successColor })
+
+Write-Host ""
+Write-Host "Next steps:" -ForegroundColor $infoColor
+Write-Host "  1. Start Publisher: dotnet run --project Publisher/Publisher.csproj"
+Write-Host "  2. Test via Swagger: https://localhost:7000"
+Write-Host "  3. Start Subscriber: dotnet run --project Subscriber/Subscriber.csproj"
+Write-Host "  4. Monitor RabbitMQ: http://localhost:15672 (guest/guest)"
+
+Write-Host ""
+
+if ($failureCount -eq 0) {
+    Write-Host "✓ All queues and bindings created successfully!" -ForegroundColor $successColor
+    exit 0
+}
+else {
+    Write-Host "⚠ Setup completed with errors. Please review the failures above." -ForegroundColor Yellow
+    exit 1
+}

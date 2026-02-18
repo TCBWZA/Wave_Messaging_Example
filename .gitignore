@@ -1,0 +1,93 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+
+# Visual Studio Code
+*.code-workspace
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Package manager
+packages/
+*.lock.json
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+
+# Environment files (NEVER commit these)
+.env
+.env.local
+.env.*.local
+# Keep .env.example - it's a safe template with no secrets
+!.env.example
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.json
+
+# Database files
+*.mdf
+*.ldf
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Local development
+local/
+temp/
+tmp/
+
+# Build artifacts
+artifacts/
+dist/
+
+# Rider
+.idea/
+*.sln.iml
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Node modules (if using npm)
+node_modules/
+
+# Secrets (explicit exclusion)
+secrets/
+*.pem
+*.key
+*.pfx
