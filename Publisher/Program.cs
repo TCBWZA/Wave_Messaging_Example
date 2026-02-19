@@ -10,6 +10,7 @@ using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using DotNetEnv;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 // Enable UTF-8 encoding for console output to support Unicode characters (emoji, etc.)
 Console.OutputEncoding = Encoding.UTF8;
